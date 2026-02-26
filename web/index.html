@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Redi – College Feed</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --bg: #0f0f0f;
+      --card: #1a1a1a;
+      --border: #2a2a2a;
+      --text: #e4e4e4;
+      --muted: #888;
+      --accent: #ff6b35;
+      --accent-hover: #ff8555;
+      --success: #22c55e;
+      --danger: #ef4444;
+    }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    .container { max-width: 640px; margin: 0 auto; padding: 1rem; }
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    header h1 { margin: 0; font-size: 1.25rem; color: var(--accent); }
+    nav { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      text-decoration: none;
+      background: var(--border);
+      color: var(--text);
+    }
+    .btn:hover { background: #3a3a3a; }
+    .btn.primary { background: var(--accent); color: #fff; }
+    .btn.primary:hover { background: var(--accent-hover); }
+    .btn.small { padding: 0.35rem 0.75rem; font-size: 0.85rem; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .card h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+    .card .meta { color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .card .content { white-space: pre-wrap; word-break: break-word; margin-bottom: 0.75rem; }
+    .card img { max-width: 100%; max-height: 320px; width: auto; height: auto; object-fit: contain; border-radius: 8px; margin-top: 0.5rem; display: block; }
+    .card .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+    .card .actions button { margin: 0; }
+    .auth-form { max-width: 360px; margin: 2rem auto; }
+    .auth-form input {
+      width: 100%;
+      padding: 0.6rem;
+      margin-bottom: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--text);
+      font-size: 1rem;
+    }
+    .auth-form label { display: block; margin-bottom: 0.25rem; color: var(--muted); font-size: 0.9rem; }
+    .auth-form .tabs { display: flex; gap: 0; margin-bottom: 1rem; }
+    .auth-form .tabs button {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .auth-form .tabs button.active { background: var(--border); color: var(--text); }
+    .auth-form .tab { display: none; }
+    .auth-form .tab.active { display: block; }
+    .error { color: var(--danger); font-size: 0.9rem; margin-bottom: 0.5rem; }
+    .user-info { color: var(--muted); font-size: 0.9rem; }
+    textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+      resize: vertical;
+    }
+    .new-post-form .actions { margin-top: 0.75rem; display: flex; gap: 0.5rem; align-items: center; }
+    .new-post-form input[type="file"] { margin-top: 0.5rem; font-size: 0.9rem; }
+    .comment {
+      border-left: 3px solid var(--border);
+      padding-left: 0.75rem;
+      margin: 0.5rem 0;
+    }
+    .comment.reply { margin-left: 1.5rem; }
+    .comment .author { color: var(--muted); font-size: 0.85rem; }
+    .comment .text { margin: 0.25rem 0; }
+    .comment .actions { margin-top: 0.25rem; }
+    #postDetail .back { margin-bottom: 1rem; }
+    .empty { color: var(--muted); text-align: center; padding: 2rem; }
+    .loading { color: var(--muted); padding: 1rem; }
+    .card img.post-img { cursor: pointer; }
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0,0,0,0.9);
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      cursor: zoom-out;
+    }
+    .lightbox.active { display: flex; }
+    .lightbox img { max-width: 100%; max-height: 100vh; object-fit: contain; pointer-events: none; }
+    .lightbox .close { position: absolute; top: 1rem; right: 1rem; cursor: pointer; background: var(--border); color: var(--text); border: none; border-radius: 8px; padding: 0.5rem 1rem; font-size: 1rem; }
+    .lightbox .close:hover { background: #3a3a3a; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header id="header" style="display: none;">
+      <h1>Redi</h1>
+      <nav>
+        <span class="user-info" id="userInfo"></span>
+        <button type="button" class="btn" data-page="feed">Feed</button>
+        <button type="button" class="btn" data-page="new">New post</button>
+        <button type="button" class="btn" data-page="saved">Saved</button>
+        <button type="button" class="btn" id="logoutBtn">Logout</button>
+      </nav>
+    </header>
+
+    <div id="authPage" class="page active">
+      <div class="auth-form card">
+        <div class="auth-form tabs">
+          <button type="button" class="active" data-tab="login">Login</button>
+          <button type="button" data-tab="register">Register</button>
+        </div>
+        <div id="authError" class="error" style="display: none;"></div>
+        <div id="loginTab" class="tab active">
+          <label>Email</label>
+          <input type="email" id="loginEmail" placeholder="you@example.com" />
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" />
+          <button type="button" class="btn primary" style="width:100%; margin-top:0.5rem;" id="loginBtn">Login</button>
+        </div>
+        <div id="registerTab" class="tab">
+          <label>Email</label>
+          <input type="email" id="registerEmail" placeholder="you@example.com" />
+          <label>Username</label>
+          <input type="text" id="registerUsername" placeholder="johndoe" />
+          <label>Password</label>
+          <input type="password" id="registerPassword" placeholder="••••••••" />
+          <button type="button" class="btn primary" style="width:100%; margin-top:0.5rem;" id="registerBtn">Register</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="feedPage" class="page">
+      <div class="container">
+        <div id="feedList"></div>
+      </div>
+    </div>
+
+    <div id="newPage" class="page">
+      <div class="container">
+        <div class="card new-post-form">
+          <h3>New post</h3>
+          <textarea id="newPostContent" placeholder="What's on your mind?"></textarea>
+          <label style="margin-top:0.5rem;">Image (optional)</label>
+          <input type="file" id="newPostImage" accept="image/*" />
+          <div class="actions">
+            <button type="button" class="btn primary" id="submitPostBtn">Post</button>
+            <span id="newPostError" class="error"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="savedPage" class="page">
+      <div class="container">
+        <div id="savedList"></div>
+      </div>
+    </div>
+
+    <div id="postDetailPage" class="page">
+      <div class="container">
+        <button type="button" class="btn back" id="backFromPost">← Back to feed</button>
+        <div id="postDetail"></div>
+        <div class="card">
+          <h3>Comments</h3>
+          <div id="commentForm">
+            <textarea id="commentContent" placeholder="Add a comment..."></textarea>
+            <button type="button" class="btn primary small" style="margin-top:0.5rem;" id="submitCommentBtn">Comment</button>
+          </div>
+          <div id="commentsList" style="margin-top:1rem;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="imageLightbox" class="lightbox" aria-hidden="true">
+    <img id="lightboxImg" src="" alt="Full size" />
+    <button type="button" class="close" id="closeLightbox" aria-label="Close">✕ Close</button>
+  </div>
+
+  <script>
+    const API = window.location.origin + '/api';
+    const TOKEN_KEY = 'redi_token';
+    const USER_KEY = 'redi_user';
+
+    function getToken() { return localStorage.getItem(TOKEN_KEY); }
+    function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+    function clearAuth() { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); }
+    function setUser(u) { localStorage.setItem(USER_KEY, JSON.stringify(u)); }
+    function getUser() { try { return JSON.parse(localStorage.getItem(USER_KEY)); } catch { return null; } }
+
+    async function api(path, opts = {}) {
+      const token = getToken();
+      const headers = { ...(opts.headers || {}) };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      if (!(opts.body instanceof FormData) && opts.body && typeof opts.body === 'object' && !(opts.body instanceof Blob))
+        headers['Content-Type'] = 'application/json';
+      const res = await fetch(API + path, { ...opts, headers });
+      const text = await res.text();
+      let data = null;
+      try { data = text ? JSON.parse(text) : null; } catch {}
+      if (!res.ok) throw new Error(data?.error || res.statusText || 'Request failed');
+      return data;
+    }
+
+    function showAuth() {
+      document.getElementById('authPage').classList.add('active');
+      document.getElementById('header').style.display = 'none';
+      ['feedPage','newPage','savedPage','postDetailPage'].forEach(id => document.getElementById(id).classList.remove('active'));
+    }
+
+    function showApp() {
+      document.getElementById('authPage').classList.remove('active');
+      document.getElementById('header').style.display = 'flex';
+      const u = getUser();
+      document.getElementById('userInfo').textContent = u ? `@${u.username}` : '';
+    }
+
+    function showPage(pageId) {
+      ['feedPage','newPage','savedPage','postDetailPage'].forEach(id => {
+        document.getElementById(id).classList.toggle('active', id === pageId);
+      });
+      if (pageId === 'feedPage') loadFeed();
+      if (pageId === 'savedPage') loadSaved();
+    }
+
+    document.querySelectorAll('.auth-form .tabs button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.auth-form .tabs button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.auth-form .tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        const tab = btn.dataset.tab === 'register' ? 'registerTab' : 'loginTab';
+        document.getElementById(tab).classList.add('active');
+        document.getElementById('authError').style.display = 'none';
+      });
+    });
+
+    function showAuthError(msg) {
+      const el = document.getElementById('authError');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      if (!email || !password) { showAuthError('Email and password required'); return; }
+      try {
+        const data = await api('/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+        setToken(data.token);
+        setUser(data.user);
+        showAuthError('');
+        showApp();
+        showPage('feedPage');
+      } catch (e) { showAuthError(e.message); }
+    });
+
+    document.getElementById('registerBtn').addEventListener('click', async () => {
+      const email = document.getElementById('registerEmail').value.trim();
+      const username = document.getElementById('registerUsername').value.trim();
+      const password = document.getElementById('registerPassword').value;
+      if (!email || !username || !password) { showAuthError('All fields required'); return; }
+      try {
+        const data = await api('/register', { method: 'POST', body: JSON.stringify({ email, username, password }) });
+        setToken(data.token);
+        setUser(data.user);
+        showAuthError('');
+        showApp();
+        showPage('feedPage');
+      } catch (e) { showAuthError(e.message); }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      clearAuth();
+      showAuth();
+    });
+
+    document.getElementById('closeLightbox').addEventListener('click', (e) => { e.stopPropagation(); closeImageLightbox(); });
+    document.getElementById('imageLightbox').addEventListener('click', (e) => { if (e.target.id === 'imageLightbox') closeImageLightbox(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.getElementById('imageLightbox').classList.contains('active')) closeImageLightbox(); });
+
+    document.querySelectorAll('nav button[data-page]').forEach(btn => {
+      btn.addEventListener('click', () => showPage(btn.dataset.page + 'Page'));
+    });
+
+    function formatDate(d) {
+      if (!d) return '';
+      const dt = new Date(d);
+      return dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function renderPost(p, containerId, opts = {}) {
+      const wrap = document.getElementById(containerId);
+      if (!wrap) return;
+      const me = getUser();
+      const isAuthor = me && me.id && p.user_id && me.id === p.user_id;
+      const hasImage = !!(p.image_url || p.image_path);
+      const imgSrc = hasImage && p.id
+        ? (window.location.origin + '/api/img/post/' + p.id)
+        : '';
+      const imgTag = imgSrc
+        ? `<img class="post-img" src="${escapeAttr(imgSrc)}" alt="Post" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'" data-full-src="${escapeAttr(imgSrc)}" />`
+        : '';
+      const deleteBtn = isAuthor
+        ? `<button type="button" class="btn small" data-action="delete" data-id="${p.id}" style="margin-left:auto; color: var(--danger);">Delete</button>`
+        : '';
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.dataset.postId = p.id;
+      div.innerHTML = `
+        <div class="meta">@${p.author_username || '?'} · ${formatDate(p.created_at)}</div>
+        ${p.content ? `<div class="content">${escapeHtml(p.content)}</div>` : ''}
+        ${imgTag}
+        <div class="actions">
+          <button type="button" class="btn small ${p.liked_by_me ? 'primary' : ''}" data-action="like" data-id="${p.id}">♥ ${p.like_count ?? 0}</button>
+          <button type="button" class="btn small" data-action="comments" data-id="${p.id}">Comments ${p.comment_count ?? 0}</button>
+          <button type="button" class="btn small ${p.saved_by_me ? 'primary' : ''}" data-action="save" data-id="${p.id}">${p.saved_by_me ? 'Saved' : 'Save'}</button>
+          ${deleteBtn}
+        </div>
+      `;
+      wrap.appendChild(div);
+      const postImg = div.querySelector('img.post-img');
+      if (postImg) {
+        postImg.addEventListener('click', (e) => { e.stopPropagation(); e.preventDefault(); openImageLightbox(postImg.src || postImg.dataset.fullSrc); });
+      }
+      div.querySelectorAll('[data-action="like"]').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); toggleLike(p.id, btn, div); }));
+      div.querySelectorAll('[data-action="save"]').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); toggleSave(p.id, btn, div); }));
+      div.querySelectorAll('[data-action="comments"]').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); openPostDetail(p.id); }));
+      div.querySelectorAll('[data-action="delete"]').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); deletePost(p.id, div, containerId); }));
+      if (opts.onClick) div.style.cursor = 'pointer'; div.addEventListener('click', (e) => { if (!e.target.closest('button')) opts.onClick && opts.onClick(p); });
+    }
+
+    async function deletePost(postId, cardEl, containerId) {
+      if (!confirm('Delete this post?')) return;
+      try {
+        await api('/posts/' + postId, { method: 'DELETE' });
+        cardEl.remove();
+        if (containerId === 'postDetail' && currentPostId === postId) {
+          document.getElementById('backFromPost').click();
+        }
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    function openImageLightbox(src) {
+      if (!src) return;
+      const lb = document.getElementById('imageLightbox');
+      const img = document.getElementById('lightboxImg');
+      img.src = src;
+      lb.classList.add('active');
+      lb.setAttribute('aria-hidden', 'false');
+    }
+    function closeImageLightbox() {
+      const lb = document.getElementById('imageLightbox');
+      lb.classList.remove('active');
+      lb.setAttribute('aria-hidden', 'true');
+      document.getElementById('lightboxImg').src = '';
+    }
+    function escapeHtml(s) {
+      const el = document.createElement('div');
+      el.textContent = s;
+      return el.innerHTML;
+    }
+    function escapeAttr(s) { return String(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+
+    async function toggleLike(postId, btn, card) {
+      const isLiked = btn.classList.contains('primary');
+      try {
+        if (isLiked) await api('/posts/' + postId + '/like', { method: 'DELETE' });
+        else await api('/posts/' + postId + '/like', { method: 'POST' });
+        const countEl = card.querySelector('[data-action="like"]');
+        let n = parseInt(countEl.textContent.replace('♥', '').trim(), 10) || 0;
+        n += isLiked ? -1 : 1;
+        countEl.textContent = '♥ ' + n;
+        countEl.classList.toggle('primary', !isLiked);
+      } catch (e) { console.error(e); }
+    }
+
+    async function toggleSave(postId, btn, card) {
+      const isSaved = btn.classList.contains('primary');
+      try {
+        if (isSaved) await api('/posts/' + postId + '/save', { method: 'DELETE' });
+        else await api('/posts/' + postId + '/save', { method: 'POST' });
+        btn.textContent = isSaved ? 'Save' : 'Saved';
+        btn.classList.toggle('primary', !isSaved);
+      } catch (e) { console.error(e); }
+    }
+
+    async function loadFeed() {
+      const list = document.getElementById('feedList');
+      list.innerHTML = '<div class="loading">Loading feed…</div>';
+      try {
+        const data = await api('/posts?limit=30');
+        list.innerHTML = '';
+        (data.posts || []).forEach(p => renderPost(p, 'feedList', { onClick: () => openPostDetail(p.id) }));
+        if ((data.posts || []).length === 0) list.innerHTML = '<div class="empty">No posts yet. Create one!</div>';
+      } catch (e) {
+        list.innerHTML = '<div class="error">' + escapeHtml(e.message) + '</div>';
+      }
+    }
+
+    async function loadSaved() {
+      const list = document.getElementById('savedList');
+      list.innerHTML = '<div class="loading">Loading saved…</div>';
+      try {
+        const data = await api('/me/saved');
+        list.innerHTML = '';
+        (data.posts || []).forEach(p => renderPost(p, 'savedList', { onClick: () => openPostDetail(p.id) }));
+        if ((data.posts || []).length === 0) list.innerHTML = '<div class="empty">No saved posts.</div>';
+      } catch (e) {
+        list.innerHTML = '<div class="error">' + escapeHtml(e.message) + '</div>';
+      }
+    }
+
+    let currentPostId = null;
+    function openPostDetail(id) {
+      currentPostId = id;
+      document.getElementById('feedPage').classList.remove('active');
+      document.getElementById('newPage').classList.remove('active');
+      document.getElementById('savedPage').classList.remove('active');
+      document.getElementById('postDetailPage').classList.add('active');
+      loadPostDetail(id);
+    }
+
+    document.getElementById('backFromPost').addEventListener('click', () => showPage('feedPage'));
+
+    async function loadPostDetail(id) {
+      const wrap = document.getElementById('postDetail');
+      wrap.innerHTML = '<div class="loading">Loading…</div>';
+      document.getElementById('commentsList').innerHTML = '';
+      document.getElementById('commentContent').value = '';
+      try {
+        const post = await api('/posts/' + id);
+        wrap.innerHTML = '';
+        renderPost(post, 'postDetail', {});
+        const commentsRes = await api('/posts/' + id + '/comments');
+        renderComments(commentsRes.comments || [], document.getElementById('commentsList'), id);
+      } catch (e) {
+        wrap.innerHTML = '<div class="error">' + escapeHtml(e.message) + '</div>';
+      }
+    }
+
+    function renderComments(comments, container, postId, isReply = false) {
+      comments.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'comment' + (isReply ? ' reply' : '');
+        div.dataset.commentId = c.id;
+        div.innerHTML = `
+          <div class="author">@${c.author_username || '?'} · ${formatDate(c.created_at)}</div>
+          <div class="text">${escapeHtml(c.content)}</div>
+          <div class="actions">
+            <button type="button" class="btn small ${c.liked_by_me ? 'primary' : ''}" data-like-comment="${c.id}">♥ ${c.like_count ?? 0}</button>
+            <button type="button" class="btn small" data-reply="${c.id}">Reply</button>
+          </div>
+          <div class="replies"></div>
+        `;
+        container.appendChild(div);
+        const repliesEl = div.querySelector('.replies');
+        if (c.replies && c.replies.length) renderComments(c.replies, repliesEl, postId, true);
+        div.querySelector('[data-like-comment]').addEventListener('click', () => likeComment(c.id, div));
+        div.querySelector('[data-reply]').addEventListener('click', () => replyToComment(c.id, postId, repliesEl));
+      });
+    }
+
+    async function likeComment(commentId, commentEl) {
+      try {
+        const btn = commentEl.querySelector('[data-like-comment]');
+        const liked = btn.classList.contains('primary');
+        if (liked) await api('/comments/' + commentId + '/like', { method: 'DELETE' });
+        else await api('/comments/' + commentId + '/like', { method: 'POST' });
+        let n = parseInt(btn.textContent.replace('♥', '').trim(), 10) || 0;
+        n += liked ? -1 : 1;
+        btn.textContent = '♥ ' + n;
+        btn.classList.toggle('primary', !liked);
+      } catch (e) { console.error(e); }
+    }
+
+    function replyToComment(commentId, postId, repliesContainer) {
+      const form = document.createElement('div');
+      form.className = 'comment reply';
+      form.innerHTML = `
+        <textarea placeholder="Write a reply..." style="min-height:60px; width:100%; margin-bottom:0.5rem;"></textarea>
+        <button type="button" class="btn primary small">Send reply</button>
+      `;
+      const textarea = form.querySelector('textarea');
+      const sendBtn = form.querySelector('button');
+      sendBtn.addEventListener('click', async () => {
+        const content = textarea.value.trim();
+        if (!content) return;
+        try {
+          await api('/comments/' + commentId + '/reply', { method: 'POST', body: JSON.stringify({ content }) });
+          if (currentPostId === postId) loadPostDetail(postId);
+        } catch (e) { alert(e.message); }
+      });
+      repliesContainer.appendChild(form);
+    }
+
+    document.getElementById('submitCommentBtn').addEventListener('click', async () => {
+      if (!currentPostId) return;
+      const content = document.getElementById('commentContent').value.trim();
+      if (!content) return;
+      try {
+        await api('/posts/' + currentPostId + '/comments', { method: 'POST', body: JSON.stringify({ content }) });
+        document.getElementById('commentContent').value = '';
+        loadPostDetail(currentPostId);
+      } catch (e) { alert(e.message); }
+    });
+
+    document.getElementById('submitPostBtn').addEventListener('click', async () => {
+      const content = document.getElementById('newPostContent').value.trim();
+      const fileInput = document.getElementById('newPostImage');
+      const file = fileInput && fileInput.files && fileInput.files[0];
+      const errEl = document.getElementById('newPostError');
+      errEl.textContent = '';
+      if (!content && !file) { errEl.textContent = 'Add text or an image.'; return; }
+      try {
+        if (file) {
+          const form = new FormData();
+          if (content) form.append('content', content);
+          form.append('image', file);
+          await api('/posts', { method: 'POST', body: form });
+        } else {
+          await api('/posts', { method: 'POST', body: JSON.stringify({ content }) });
+        }
+        document.getElementById('newPostContent').value = '';
+        fileInput.value = '';
+        showPage('feedPage');
+      } catch (e) { errEl.textContent = e.message; }
+    });
+
+    if (getToken()) {
+      api('/me').then(() => { showApp(); showPage('feedPage'); }).catch(() => { clearAuth(); showAuth(); });
+    } else {
+      showAuth();
+    }
+  </script>
+</body>
+</html>

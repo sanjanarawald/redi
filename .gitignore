@@ -1,0 +1,11 @@
+# Env and secrets – do not commit
+.env
+serviceAccountKey.json
+*.json.bak
+
+# Build
+redi.exe
+redi
+
+# Local DB (if any)
+redi.db
